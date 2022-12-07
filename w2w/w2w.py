@@ -627,13 +627,26 @@ def _get_wrf_grid_info(info: Info) -> Dict[str, Any]:
     # Follow this: https://github.com/NCAR/wrf-python/blob/
     # 4a9ff241c8f3615b6a5c94e10a945e8a39bdea27/src/wrf/projection.py#L928
     elif map_proj == 6:
-        wrf_proj = pyproj.Proj(
-            proj='eqc',
-            units='m',
-            a=6370000,
-            b=6370000,
-            lon_0=dst_data.STAND_LON,
-        )
+        if dst_data.POLE_LAT == 90. and dst_data.POLE_LON == 0.:
+            wrf_proj = pyproj.Proj(
+                proj='eqc',
+                units='m',
+                a=6370000,
+                b=6370000,
+                lon_0=dst_data.STAND_LON,
+            )
+        else:
+            wrf_proj = pyproj.Proj(
+                proj='ob_tran',
+                o_proj='latlong',
+                units='deg',
+                a=6370000,
+                b=6370000,
+                lon_0=-dst_data.STAND_LON,
+                o_lon_p=180.-dst_data.POLE_LON,
+                o_lat_p=dst_data.POLE_LAT,
+            )     
+        
 
     # Make transform
     transformer_wrf = Transformer.from_proj(wgs_proj, wrf_proj)
