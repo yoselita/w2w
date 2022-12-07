@@ -639,7 +639,7 @@ def _get_wrf_grid_info(info: Info) -> Dict[str, Any]:
             wrf_proj = pyproj.Proj(
                 proj='ob_tran',
                 o_proj='latlong',
-                units='deg',
+                to_meter=0.01745329251994329,
                 a=6370000,
                 b=6370000,
                 lon_0=-dst_data.STAND_LON,
