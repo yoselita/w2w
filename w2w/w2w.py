@@ -50,7 +50,7 @@ def main(argv: Optional[Sequence[str]] = None) -> int:
         '- *_NoUrban.nc: MODIS Urban replaced by surrounding natural LC\n'
         '- *_LCZ_extent.nc: LCZ urban extent implemented, no LCZ UCPs yet\n'
         '- *_LCZ_params.nc: LCZ urban extent + UPC parameter values\n'
-        '- *_dXX_41.nc: Parent domain files reflecting 41 Land categories',
+        '- *_dXX_61.nc: Parent domain files reflecting 61 Land categories',
         formatter_class=RawTextHelpFormatter,
     )
 
@@ -200,7 +200,7 @@ def main(argv: Optional[Sequence[str]] = None) -> int:
         info=info,
     )
 
-    print(f'{FBOLD}--> Expanding land categories of parent ' f'domain(s) to 41{FEND}')
+    print(f'{FBOLD}--> Expanding land categories of parent ' f'domain(s) to 61{FEND}')
     expand_land_cat_parents(
         info=info,
     )
@@ -613,6 +613,16 @@ def _get_wrf_grid_info(info: Info) -> Dict[str, Any]:
             lon_0=dst_data.STAND_LON,
             lat_ts=dst_data.TRUELAT1,
         )
+        
+        _proj4 = ("+proj=stere +units=m +a={} +b={} "
+                  "+lat_0={} +lon_0={} +lat_ts={} +nadgrids=@null".format(
+                                            Constants.WRF_EARTH_RADIUS,
+                                            Constants.WRF_EARTH_RADIUS,
+                                            self._hemi,
+                                            self.stand_lon,
+                                            self._lat_ts))
+
+
     # Mercator
     elif map_proj == 3:
         wrf_proj = pyproj.Proj(
@@ -635,18 +645,28 @@ def _get_wrf_grid_info(info: Info) -> Dict[str, Any]:
                 b=6370000,
                 lon_0=dst_data.STAND_LON,
             )
+                      
+                      
         else:
+            if dst_data.MOAD_CEN_LAT > 0:   # North hemisfere
+                proj_pole_lat = dst_data.POLE_LAT
+                proj_pole_lon = -dst_data.STAND_LON - 180.0
+            else:
+                hemi_north==False
+                proj_pole_lat = -dst_data.POLE_LAT
+                proj_pole_lon = -dst_data.STAND_LON
+
             wrf_proj = pyproj.Proj(
                 proj='ob_tran',
-                o_proj='latlong',
-                to_meter=0.01745329251994329,
+                o_proj='latlon',
+                units='m',
                 a=6370000,
                 b=6370000,
-                lon_0=-dst_data.STAND_LON,
-                o_lon_p=180.-dst_data.POLE_LON,
-                o_lat_p=dst_data.POLE_LAT,
-            )     
-        
+                o_lon_p=180.0 - dst_data.POLE_LON,
+                o_lat_p=proj_pole_lat,
+                lon_0=180 + dst_data.POLE_LON,
+            )
+       
 
     # Make transform
     transformer_wrf = Transformer.from_proj(wgs_proj, wrf_proj)
@@ -1107,9 +1127,9 @@ def _lcz_resampler(
 
     # Only keep LCZ pixels where FRC_URB2D > 0, for concistency
     frc_mask = frc_urb2d.values[0, :, :] != 0
-
-    # Final LU_INDEX = 31 to 41 (included), as LCZ classes.
-    lcz_resampled = lcz_2_wrf[0, frc_mask] + 30
+    
+    # Final LU_INDEX = 51 to 60 (included), as LCZ classes in the newest version of
+    lcz_resampled = lcz_2_wrf[0, frc_mask] + 50
 
     return frc_mask, lcz_resampled
 
@@ -1141,10 +1161,10 @@ def _adjust_greenfrac_landusef(
     for mm in range(12):
         dst_data['GREENFRAC'].values[0, mm, frc_mask] = greenfrac_per_month[mm]
 
-    # TODO: For lower resolution domains, this might not be valid?
-    # Create new LANDUSEF with 41 levels instead of 21
+    # TODO: For lower resolution domains, this might not be valid?    
+    # Create new LANDUSEF with 61 levels instead of 21
     landusef_new = np.zeros(
-        (41, dst_data.LANDUSEF.shape[2], dst_data.LANDUSEF.shape[3])
+        (61, dst_data.LANDUSEF.shape[2], dst_data.LANDUSEF.shape[3])
     )
 
     # Copy values from original file
@@ -1165,8 +1185,8 @@ def _adjust_greenfrac_landusef(
     # First store orginal attributes, then drop variable
     luf_attrs = dst_data.LANDUSEF.attrs
     dst_data = dst_data.drop_vars('LANDUSEF')
-
-    # Expand axis to take shape (1,41,x,y)
+    
+    # Expand axis to take shape (1,61,x,y)
     landusef_new = np.expand_dims(landusef_new, axis=0)
 
     # Add back to data-array, including (altered) attributes
@@ -1176,7 +1196,7 @@ def _adjust_greenfrac_landusef(
     )
     dst_data['LANDUSEF'] = dst_data.LANDUSEF.astype('float32')
 
-    luf_attrs['description'] = 'Noah-modified 41-category IGBP-MODIS landuse'
+    luf_attrs['description'] = 'Noah-modified 61-category IGBP-MODIS landuse'
     for key in luf_attrs.keys():
         dst_data['LANDUSEF'].attrs[key] = luf_attrs[key]
 
@@ -1230,7 +1250,7 @@ def _add_frc_lu_index_2_wrf(
         LCZ_NAT_MASK=LCZ_NAT_MASK,
     )
 
-    # 2) as LU_INDEX = 30 to 41, as LCZ classes.
+    # 2) as LU_INDEX = 30 to 61, as LCZ classes.
     dst_data['LU_INDEX'].values[0, frc_mask] = lcz_resampled
 
     # Also adjust GREENFRAC and LANDUSEF
@@ -1349,7 +1369,7 @@ def create_lcz_params_file(
     # Add/Change some additional global attributes,
     # including NBUI_MAX = max. nr. of HI intervals over the grid
     glob_attrs: Dict[str, Union[int, SupportsInt]] = {
-        'NUM_LAND_CAT': 41,
+        'NUM_LAND_CAT': 61,
         'FLAG_URB_PARAM': 1,
         'NBUI_MAX': np.intc(nbui_max),
     }
@@ -1444,15 +1464,15 @@ def expand_land_cat_parents(info: Info) -> None:
             da = xr.open_dataset(ifile)
 
             try:
-                if int(da.attrs['NUM_LAND_CAT']) != 41:
+                if int(da.attrs['NUM_LAND_CAT']) != 61:
 
                     orig_num_land_cat = da.attrs['NUM_LAND_CAT']
-                    # Set number of land categories to 41
-                    da.attrs['NUM_LAND_CAT'] = np.intc(41)
+                    # Set number of land categories to 61
+                    da.attrs['NUM_LAND_CAT'] = np.intc(61)
 
                     # Create new landusef array with expanded dimensions
                     landusef_new = np.zeros(
-                        (1, 41, da.LANDUSEF.shape[2], da.LANDUSEF.shape[3])
+                        (1, 61, da.LANDUSEF.shape[2], da.LANDUSEF.shape[3])
                     )
                     landusef_new[:, :orig_num_land_cat, :, :] = da['LANDUSEF'].values
 
@@ -1468,16 +1488,16 @@ def expand_land_cat_parents(info: Info) -> None:
                     da['LANDUSEF'] = da.LANDUSEF.astype('float32')
 
                     luf_attrs['description'] = (
-                        'Noah-modified 41-category ' 'IGBP-MODIS landuse'
+                        'Noah-modified 61-category ' 'IGBP-MODIS landuse'
                     )
                     for key in luf_attrs.keys():
                         da['LANDUSEF'].attrs[key] = luf_attrs[key]
 
-                    ofile = ifile.replace('.nc', '_41.nc')
+                    ofile = ifile.replace('.nc', '_61.nc')
                     da.to_netcdf(ofile)
 
                 else:
-                    print(f'> Parent domain d{i:02d}.nc already contains 41 LC classes')
+                    print(f'> Parent domain d{i:02d}.nc already contains 61 LC classes')
             except Exception:
                 err = traceback.format_exc()
                 print(f'Cannot read NUM_LAND_CAT and LANDUSEF dimensions\n{err}')
