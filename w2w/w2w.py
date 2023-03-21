@@ -1,4 +1,4 @@
-import argparse
+/import argparse
 import os
 import sys
 import traceback
@@ -658,8 +658,8 @@ def _get_wrf_grid_info(info: Info) -> Dict[str, Any]:
 
             wrf_proj = pyproj.Proj(
                 proj='ob_tran',
-                o_proj='latlon',
-                units='m',
+                o_proj='latlong',
+                units='degrees',
                 a=6370000,
                 b=6370000,
                 o_lon_p=180.0 - dst_data.POLE_LON,
@@ -667,7 +667,8 @@ def _get_wrf_grid_info(info: Info) -> Dict[str, Any]:
                 lon_0=180 + dst_data.POLE_LON,
             )
        
-
+    
+    print(f'proj4 for the dataset is: {wrf_proj}')
     # Make transform
     transformer_wrf = Transformer.from_proj(wgs_proj, wrf_proj)
     e, n = transformer_wrf.transform(dst_data.CEN_LON, dst_data.CEN_LAT)
