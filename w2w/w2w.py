@@ -484,8 +484,7 @@ def wrf_remove_urban(
     
     if orig_num_land_cat > 31:
        print(
-           f'{FBOLD}--> Removing original LCZ data'
-           f'(excluding other LCZ-based){FEND}'
+           f'Removing LCZ data for the original file'
        )
        create_lcz_extent_file(
        info=info,
