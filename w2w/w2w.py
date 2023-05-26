@@ -1437,7 +1437,6 @@ def create_lcz_extent_file(info: Info) -> None:
 
     # Reset LANDUSEF again to 21 classes.
     luf_attrs = dst_extent.LANDUSEF.attrs
-    print(luf_attrs)
     luf_values = dst_extent.LANDUSEF.values
     dst_extent = dst_extent.drop_vars('LANDUSEF')
 
@@ -1449,7 +1448,7 @@ def create_lcz_extent_file(info: Info) -> None:
     dst_extent['LANDUSEF'].values[0, 12, frc_mask] = 1
     dst_extent['LANDUSEF'] = dst_extent.LANDUSEF.astype('float32')
 
-    luf_attrs['description'] = orig_luf_description
+    #luf_attrs['description'] = orig_luf_description
     for key in luf_attrs.keys():
         dst_extent['LANDUSEF'].attrs[key] = luf_attrs[key]
 
