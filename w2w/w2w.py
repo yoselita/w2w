@@ -1422,13 +1422,15 @@ def create_lcz_extent_file(info: Info) -> None:
     if orig_num_land_cat > 31:
         dst_params = xr.open_dataset(info.dst_file)
         #frc_mask = dst_params.LANDUSEF[0, 31:, :, :].sum(dim='land_cat') #!= 0
-        frc_data = dst_params.LANDUSEF[0, 31:, :, :].sum(dim='land_cat') #!= 0
+        frc_data = dst_params.LANDUSEF[0, 31:, :, :].sum(dim='land_cat')
         num_land_cat = 21
     else:
         dst_params = xr.open_dataset(info.dst_lcz_params_file)
         frc_data = dst_params.FRC_URB2D.values[0, :, :] #!= 0
         #frc_mask = dst_params.FRC_URB2D.values[0, :, :] != 0
         num_land_cat = orig_num_land_cat
+        # Remove some unnecesary variables to reduce file size
+        dst_extent = dst_extent.drop_vars(['FRC_URB2D', 'URB_PARAM'])
         
     dst_extent = dst_params.copy()
     lu_index = dst_extent.LU_INDEX.values
@@ -1436,8 +1438,7 @@ def create_lcz_extent_file(info: Info) -> None:
 
     dst_extent.LU_INDEX.values = lu_index
 
-    # Remove some unnecesary variables to reduce file size
-    dst_extent = dst_extent.drop_vars(['FRC_URB2D', 'URB_PARAM'])
+    
 
     # Reset LANDUSEF again to 21 classes.
     luf_attrs = dst_extent.LANDUSEF.attrs
