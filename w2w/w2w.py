@@ -471,9 +471,21 @@ def wrf_remove_urban(
 
     '''Remove MODIS urban extent from geo_em*.nc file'''
 
+    # Check the number of LU categories in the file
+    dst_orig = xr.open_dataset(info.dst_file)
+    orig_num_land_cat = dst_orig.NUM_LAND_CAT
+    
+    if orig_num_land_cat > 31:
+       print(
+           f'Removing LCZ data for the original file'
+       )
+       create_lcz_extent_file(
+       info=info
+       )
+    
     # Make a copy of original dst file
     dst_data = xr.open_dataset(info.dst_file)
-
+    
     # Read the relevant parameters
     luse = dst_data.LU_INDEX.squeeze()
     luf = dst_data.LANDUSEF.squeeze()
@@ -481,14 +493,6 @@ def wrf_remove_urban(
     lat = dst_data.XLAT_M.squeeze()
     lon = dst_data.XLONG_M.squeeze()
     orig_num_land_cat = dst_data.NUM_LAND_CAT
-    
-    if orig_num_land_cat > 31:
-       print(
-           f'Removing LCZ data for the original file'
-       )
-       create_lcz_extent_file(
-       info=info,
-       )
        
 
     # New arrays to hold data without urban areas
