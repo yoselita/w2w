@@ -1421,11 +1421,13 @@ def create_lcz_extent_file(info: Info) -> None:
     # Make a copy of original dst file
     if orig_num_land_cat > 31:
         dst_params = xr.open_dataset(info.dst_file)
-        frc_mask = dst_params.LANDUSEF[0, 31:, :, :].sum(dim='land_cat') != 0
+        #frc_mask = dst_params.LANDUSEF[0, 31:, :, :].sum(dim='land_cat') #!= 0
+        frc_data = dst_params.LANDUSEF[0, 31:, :, :].sum(dim='land_cat') #!= 0
         num_land_cat = 21
     else:
         dst_params = xr.open_dataset(info.dst_lcz_params_file)
-        frc_mask = dst_params.FRC_URB2D.values[0, :, :] != 0
+        frc_data = dst_params.FRC_URB2D.values[0, :, :] #!= 0
+        #frc_mask = dst_params.FRC_URB2D.values[0, :, :] != 0
         num_land_cat = orig_num_land_cat
         
     dst_extent = dst_params.copy()
@@ -1447,7 +1449,8 @@ def create_lcz_extent_file(info: Info) -> None:
         ('Time', 'land_cat', 'south_north', 'west_east'),
         luf_values[:, :num_land_cat, :, :],
     )
-    dst_extent['LANDUSEF'].values[0, 12, frc_mask] = 1
+    #dst_extent['LANDUSEF'].values[0, 12, frc_mask] = 1
+    dst_extent['LANDUSEF'].values[0, 12, :, :] = frc_data
     dst_extent['LANDUSEF'] = dst_extent.LANDUSEF.astype('float32')
 
     #luf_attrs['description'] = orig_luf_description
