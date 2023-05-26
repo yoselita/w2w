@@ -1465,7 +1465,7 @@ def create_lcz_extent_file(info: Info) -> None:
 
     # Save file.
     if orig_num_land_cat > 31:
-        ifile = f'{info.dst_file[:-5]}{i:02d}.nc'
+        ifile = f'{info.dst_file}'
         ofile = ifile.replace('.nc', '_original.nc')
         dst_extent.to_netcdf(info.dst_lcz_extent_file) 
         os.rename(ifile, ofile)
