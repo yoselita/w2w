@@ -174,6 +174,7 @@ def main(argv: Optional[Sequence[str]] = None) -> int:
         LCZ_BAND=LCZ_BAND,
     )
 
+
     print(
         f'{FBOLD}--> Replace WRF MODIS urban LC with ' f'surrounding natural LC{FEND}'
     )
@@ -480,6 +481,16 @@ def wrf_remove_urban(
     lat = dst_data.XLAT_M.squeeze()
     lon = dst_data.XLONG_M.squeeze()
     orig_num_land_cat = dst_data.NUM_LAND_CAT
+    
+    if orig_num_land_cat > 31:
+       print(
+           f'{FBOLD}--> Removing original LCZ data'
+           f'(excluding other LCZ-based){FEND}'
+       )
+       create_lcz_extent_file(
+       info=info,
+       )
+       
 
     # New arrays to hold data without urban areas
     newluse = luse.values.copy()
@@ -1405,14 +1416,17 @@ def create_lcz_extent_file(info: Info) -> None:
     (excluding other LCZ-based info)
     '''
 
-    dst_params = xr.open_dataset(info.dst_lcz_params_file)
-    frc_mask = dst_params.FRC_URB2D.values[0, :, :] != 0
-
-    dst_extent = dst_params.copy()
-
     dst_data_orig = xr.open_dataset(info.dst_file)
     orig_num_land_cat = dst_data_orig.NUM_LAND_CAT
-    orig_luf_description = dst_data_orig.LANDUSEF.description
+
+    # Make a copy of original dst file
+    if orig_num_land_cat > 31:
+        dst_params = xr.open_dataset(info.dst_file)
+    else:
+        dst_params = xr.open_dataset(info.dst_lcz_params_file)
+
+    frc_mask = dst_params.FRC_URB2D.values[0, :, :] != 0
+    dst_extent = dst_params.copy()
 
     lu_index = dst_extent.LU_INDEX.values
     lu_index[lu_index >= 31] = 13
@@ -1444,7 +1458,10 @@ def create_lcz_extent_file(info: Info) -> None:
     dst_extent.attrs['NUM_LAND_CAT'] = np.intc(orig_num_land_cat)
 
     # Save file.
-    dst_extent.to_netcdf(info.dst_lcz_extent_file)
+    if orig_num_land_cat > 31:
+        dst_extent.to_netcdf(info.dst_file)
+    else:
+        dst_extent.to_netcdf(info.dst_lcz_extent_file)
 
 
 def expand_land_cat_parents(info: Info) -> None:
