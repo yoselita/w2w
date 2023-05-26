@@ -1421,7 +1421,7 @@ def create_lcz_extent_file(info: Info) -> None:
     # Make a copy of original dst file
     if orig_num_land_cat > 31:
         dst_params = xr.open_dataset(info.dst_file)
-        frc_mask = dst_params.LANDUSEF.values[0, 20:, :, :].sum(dim='land_cat') != 0
+        frc_mask = dst_params.LANDUSEF[0, 31:, :, :].sum(dim='land_cat') != 0
         num_land_cat = 21
     else:
         dst_params = xr.open_dataset(info.dst_lcz_params_file)
@@ -1461,6 +1461,7 @@ def create_lcz_extent_file(info: Info) -> None:
     # Save file.
     if orig_num_land_cat > 31:
         dst_extent.to_netcdf(info.dst_lcz_extent_file)
+        os.rename(info.dst_lcz_extent_file, info.dst_file)
     else:
         dst_extent.to_netcdf(info.dst_lcz_extent_file)
 
