@@ -1420,7 +1420,7 @@ def create_lcz_extent_file(info: Info) -> None:
 
     # Make a copy of original dst file
     if orig_num_land_cat > 31:
-        dst_params = xr.open_dataset(info.dst_data_orig)
+        dst_params = xr.open_dataset(info.dst_file)
     else:
         dst_params = xr.open_dataset(info.dst_lcz_params_file)
 
@@ -1437,6 +1437,7 @@ def create_lcz_extent_file(info: Info) -> None:
 
     # Reset LANDUSEF again to 21 classes.
     luf_attrs = dst_extent.LANDUSEF.attrs
+    print(luf_attrs)
     luf_values = dst_extent.LANDUSEF.values
     dst_extent = dst_extent.drop_vars('LANDUSEF')
 
