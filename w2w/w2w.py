@@ -1441,9 +1441,14 @@ def create_lcz_extent_file(info: Info) -> None:
     dst_extent = dst_extent.drop_vars('LANDUSEF')
 
     # Add back to data-array, including (altered) attributes
+    if orig_num_land_cat > 31:
+        num_land_cat = 21
+    else:
+        num_land_cat = orig_num_land_cat
+    
     dst_extent['LANDUSEF'] = (
         ('Time', 'land_cat', 'south_north', 'west_east'),
-        luf_values[:, :orig_num_land_cat, :, :],
+        luf_values[:, :num_land_cat, :, :],
     )
     dst_extent['LANDUSEF'].values[0, 12, frc_mask] = 1
     dst_extent['LANDUSEF'] = dst_extent.LANDUSEF.astype('float32')
@@ -1454,7 +1459,7 @@ def create_lcz_extent_file(info: Info) -> None:
 
     # Reset some other global attributes
     dst_extent.attrs['FLAG_URB_PARAM'] = np.intc(0)
-    dst_extent.attrs['NUM_LAND_CAT'] = np.intc(orig_num_land_cat)
+    dst_extent.attrs['NUM_LAND_CAT'] = np.intc(num_land_cat)
 
     # Save file.
     if orig_num_land_cat > 31:
