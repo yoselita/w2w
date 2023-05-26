@@ -1420,7 +1420,7 @@ def create_lcz_extent_file(info: Info) -> None:
 
     # Make a copy of original dst file
     if orig_num_land_cat > 31:
-        dst_params = xr.open_dataset(info.dst_file)
+        dst_params = xr.open_dataset(info.dst_data_orig)
     else:
         dst_params = xr.open_dataset(info.dst_lcz_params_file)
 
