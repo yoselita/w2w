@@ -174,7 +174,6 @@ def main(argv: Optional[Sequence[str]] = None) -> int:
         LCZ_BAND=LCZ_BAND,
     )
 
-
     print(
         f'{FBOLD}--> Replace WRF MODIS urban LC with ' f'surrounding natural LC{FEND}'
     )
@@ -477,7 +476,7 @@ def wrf_remove_urban(
     
     if orig_num_land_cat > 31:
        print(
-           f'Removing LCZ data for the original file'
+           f'Removing LCZ data from the original file'
        )
        create_lcz_extent_file(
        info=info
@@ -1427,6 +1426,7 @@ def create_lcz_extent_file(info: Info) -> None:
         dst_params = xr.open_dataset(info.dst_file)
         #frc_mask = dst_params.LANDUSEF[0, 31:, :, :].sum(dim='land_cat') #!= 0
         frc_data = dst_params.LANDUSEF[0, 31:, :, :].sum(dim='land_cat')
+        dst_extent = dst_params.copy()
         num_land_cat = 21
     else:
         dst_params = xr.open_dataset(info.dst_lcz_params_file)
@@ -1434,15 +1434,12 @@ def create_lcz_extent_file(info: Info) -> None:
         #frc_mask = dst_params.FRC_URB2D.values[0, :, :] != 0
         num_land_cat = orig_num_land_cat
         # Remove some unnecesary variables to reduce file size
+        dst_extent = dst_params.copy()
         dst_extent = dst_extent.drop_vars(['FRC_URB2D', 'URB_PARAM'])
         
-    dst_extent = dst_params.copy()
     lu_index = dst_extent.LU_INDEX.values
     lu_index[lu_index >= 31] = 13
-
-    dst_extent.LU_INDEX.values = lu_index
-
-    
+    dst_extent.LU_INDEX.values = lu_index    
 
     # Reset LANDUSEF again to 21 classes.
     luf_attrs = dst_extent.LANDUSEF.attrs
