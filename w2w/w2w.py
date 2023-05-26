@@ -1458,7 +1458,7 @@ def create_lcz_extent_file(info: Info) -> None:
 
     # Save file.
     if orig_num_land_cat > 31:
-        dst_extent.to_netcdf(info.dst_file)
+        dst_extent.to_netcdf(info.dst_lcz_extent_file)
     else:
         dst_extent.to_netcdf(info.dst_lcz_extent_file)
 
